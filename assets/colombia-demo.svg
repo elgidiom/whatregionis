@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1000" role="img" aria-label="Mapa de Colombia simplificado (demo)">
+  <desc>Demo simplificado para probar la mecánica de clic. Sustituir por un SVG preciso de departamentos.</desc>
+  <defs>
+    <style>
+      .region { fill: #334155; stroke: #0b1220; stroke-width: 1.2; }
+      .region:hover { fill: #475569; }
+    </style>
+  </defs>
+
+  <!-- Capa: Caribe (fila superior) -->
+  <g id="caribe" transform="translate(60,40)">
+    <rect class="region" x="0"   y="0" width="90" height="70" rx="6" data-name="La Guajira"/>
+    <rect class="region" x="100" y="0" width="90" height="70" rx="6" data-name="Cesar"/>
+    <rect class="region" x="200" y="0" width="90" height="70" rx="6" data-name="Magdalena"/>
+    <rect class="region" x="300" y="0" width="90" height="70" rx="6" data-name="Atlántico"/>
+    <rect class="region" x="400" y="0" width="90" height="70" rx="6" data-name="Bolívar"/>
+    <rect class="region" x="500" y="0" width="90" height="70" rx="6" data-name="Sucre"/>
+    <rect class="region" x="600" y="0" width="90" height="70" rx="6" data-name="Córdoba"/>
+  </g>
+
+  <!-- Capa: Andina (franja central) -->
+  <g id="andina" transform="translate(80,180)">
+    <rect class="region" x="0"   y="0" width="110" height="80" rx="6" data-name="Norte de Santander"/>
+    <rect class="region" x="120" y="0" width="110" height="80" rx="6" data-name="Santander"/>
+    <rect class="region" x="240" y="0" width="110" height="80" rx="6" data-name="Boyacá"/>
+    <rect class="region" x="360" y="0" width="110" height="80" rx="6" data-name="Cundinamarca"/>
+    <rect class="region" x="480" y="0" width="110" height="80" rx="6" data-name="Tolima"/>
+    <rect class="region" x="600" y="0" width="110" height="80" rx="6" data-name="Huila"/>
+
+    <rect class="region" x="60"  y="90" width="110" height="80" rx="6" data-name="Antioquia"/>
+    <rect class="region" x="180" y="90" width="110" height="80" rx="6" data-name="Caldas"/>
+    <rect class="region" x="300" y="90" width="110" height="80" rx="6" data-name="Risaralda"/>
+    <rect class="region" x="420" y="90" width="110" height="80" rx="6" data-name="Quindío"/>
+    <rect class="region" x="540" y="90" width="110" height="80" rx="6" data-name="Valle del Cauca"/>
+    <rect class="region" x="660" y="90" width="110" height="80" rx="6" data-name="Cauca"/>
+    <rect class="region" x="780" y="90" width="110" height="80" rx="6" data-name="Nariño"/>
+  </g>
+
+  <!-- Capa: Pacífico (oeste) y Chocó -->
+  <g id="pacifico" transform="translate(10,280)">
+    <rect class="region" x="0"   y="0" width="120" height="200" rx="10" data-name="Chocó"/>
+  </g>
+
+  <!-- Orinoquía (este) -->
+  <g id="orinoquia" transform="translate(520,360)">
+    <rect class="region" x="0"   y="0" width="120" height="100" rx="6" data-name="Arauca"/>
+    <rect class="region" x="130" y="0" width="140" height="100" rx="6" data-name="Casanare"/>
+    <rect class="region" x="0"   y="110" width="160" height="120" rx="6" data-name="Meta"/>
+    <rect class="region" x="170" y="110" width="150" height="120" rx="6" data-name="Vichada"/>
+  </g>
+
+  <!-- Amazonía (sur) -->
+  <g id="amazonia" transform="translate(200,600)">
+    <rect class="region" x="0"   y="0" width="160" height="120" rx="6" data-name="Caquetá"/>
+    <rect class="region" x="170" y="0" width="140" height="120" rx="6" data-name="Putumayo"/>
+    <rect class="region" x="320" y="0" width="160" height="120" rx="6" data-name="Guaviare"/>
+    <rect class="region" x="0"   y="130" width="180" height="130" rx="6" data-name="Amazonas"/>
+    <rect class="region" x="190" y="130" width="180" height="130" rx="6" data-name="Guainía"/>
+    <rect class="region" x="380" y="130" width="180" height="130" rx="6" data-name="Vaupés"/>
+  </g>
+
+  <!-- Insular (se muestra aparte como un pequeño recuadro) -->
+  <g id="insular" transform="translate(720,760)">
+    <rect class="region" x="0" y="0" width="120" height="70" rx="6" data-name="San Andrés y Providencia"/>
+  </g>
+
+  <!-- Costa Pacífica adicional: Valle y Nariño ya arriba; marcador decorativo del litoral -->
+  <path d="M50,250 C40,380 40,520 60,640" fill="none" stroke="#0b1220" stroke-width="6" opacity="0.25"/>
+</svg>
+

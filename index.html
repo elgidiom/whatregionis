@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>¿Qué departamento es?</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <h1>¿Qué departamento es?</h1>
+      <div class="status">
+        <div class="prompt">
+          Toca el departamento: <span id="target-name">—</span>
+        </div>
+        <div class="score">
+          Aciertos: <span id="score-correct">0</span>
+          · Errores: <span id="score-wrong">0</span>
+        </div>
+      </div>
+      <div class="controls">
+        <button id="btn-reset" type="button">Reiniciar</button>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <!-- Contenedor del mapa -->
+      <div id="map-wrapper" class="map-wrapper" aria-live="polite">
+        <!-- El SVG se inyecta aquí -->
+      </div>
+    </main>
+
+    <footer class="app-footer">
+      <p>
+        Nota: Este demo incluye un mapa simplificado de ejemplo. Para juego
+        real, sustituye por un SVG con los 32 departamentos de Colombia.
+      </p>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+  </html>
+

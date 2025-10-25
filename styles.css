@@ -1,0 +1,91 @@
+:root {
+  --bg: #0f172a; /* slate-900 */
+  --panel: #111827; /* gray-900 */
+  --text: #e5e7eb; /* gray-200 */
+  --muted: #9ca3af; /* gray-400 */
+  --accent: #38bdf8; /* sky-400 */
+  --good: #22c55e; /* green-500 */
+  --bad: #ef4444; /* red-500 */
+  --hover: #fbbf24; /* amber-400 */
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  background: radial-gradient(1200px 800px at 70% -20%, #1f2937, var(--bg));
+  color: var(--text);
+}
+
+.app-header {
+  padding: 16px clamp(12px, 4vw, 28px);
+  display: grid;
+  gap: 8px;
+  align-items: center;
+  border-bottom: 1px solid #1f2937;
+}
+.app-header h1 {
+  margin: 0 0 4px 0;
+  font-size: clamp(18px, 2.6vw, 28px);
+  letter-spacing: 0.2px;
+}
+.status {
+  display: flex;
+  gap: 16px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+.prompt { font-size: clamp(14px, 2.3vw, 18px); }
+.prompt #target-name { color: var(--accent); font-weight: 700; }
+.score { color: var(--muted); font-size: 14px; }
+.controls { margin-top: 6px; }
+.controls button {
+  background: #1f2937;
+  color: var(--text);
+  border: 1px solid #334155;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.controls button:hover { border-color: var(--accent); color: #fff; }
+
+.app-main { padding: clamp(10px, 3vw, 20px); }
+.map-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  background: var(--panel);
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  padding: clamp(8px, 2vw, 16px);
+}
+
+/* SVG map base */
+.map-wrapper svg { width: 100%; height: auto; display: block; }
+.map-wrapper svg circle { display: none; }
+.region {
+  fill: #334155; /* slate-700 */
+  stroke: #0b1220; /* darker stroke for contrast */
+  stroke-width: 1.2;
+  transition: fill 120ms ease, opacity 120ms ease, transform 120ms ease;
+  cursor: pointer;
+}
+.region:hover { fill: #475569; }
+.region.correct { fill: var(--good) !important; }
+.region.wrong { fill: var(--bad) !important; }
+.region.disabled { pointer-events: none; opacity: 0.65; }
+
+.legend { display: none; }
+
+.app-footer {
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+  margin: 18px 0 24px 0;
+}
+
+@media (min-width: 900px) {
+  .app-header { grid-template-columns: 1fr auto auto; }
+  .status { justify-self: start; }
+  .controls { justify-self: end; }
+}
