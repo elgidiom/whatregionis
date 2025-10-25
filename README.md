@@ -9,11 +9,21 @@ Este proyecto incluye un **SVG de demostración simplificado** para probar la me
 - Abre `index.html` en tu navegador.
 - Nota: algunos navegadores bloquean `fetch()` en `file://`. Si el mapa no carga, sirve la carpeta con un servidor estático simple (por ejemplo, `python -m http.server 8000`) y visita `http://localhost:8000/`.
 
+## Modos de juego
+
+- Libre (por defecto): al abrir, el juego inicia sin límite de tiempo.
+- 1 minuto: inicia una partida de 60s pulsando el botón `1 minuto` en el encabezado. Al finalizar, aparece un resumen con aciertos, errores y avance (resueltos/total) y opciones para compartir/copiar.
+
+Controles:
+- 1 minuto: arranca una partida cronometrada.
+- Pasar: salta el objetivo actual, cuenta como error y lo reencola al final.
+- Reiniciar: reinicia una nueva partida en el modo activo actual.
+
 ## Estructura
 
-- `index.html` — Maquetación básica y contenedores.
-- `styles.css` — Estilos del layout y del mapa (colores, estados correcto/incorrecto).
-- `app.js` — Lógica del juego: carga del SVG, orden aleatorio, validación de clics, marcador.
+- `index.html` — Maquetación básica, overlays de selección de modo y resultados.
+- `styles.css` — Estilos del layout, prompt centrado destacado, mapa y overlays.
+- `app.js` — Lógica del juego: carga del SVG, orden aleatorio, validación de clics, marcador, temporizador, skip y resultados.
 - `assets/colombia.svg` — Mapa preciso (departamentos) de SimpleMaps.
 - `assets/colombia-demo.svg` — Mapa simplificado de ejemplo (para pruebas).
 

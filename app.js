@@ -29,6 +29,13 @@ const state = {
   index: 0,
   correct: 0,
   wrong: 0,
+  initialTotal: 0,
+  mode: 'free', // 'free' | 'timed'
+  durationMs: 0,
+  endAt: 0,
+  timerId: null,
+  startAt: 0,
+  zoom: 1,
 };
 
 function setTargetName(name) {
@@ -80,8 +87,9 @@ function getTitleFor(el) {
 
 /** Carga del SVG y preparación **/
 async function loadMap() {
-  const wrapper = $('#map-wrapper');
-  wrapper.innerHTML = '<div class="loading">Cargando mapa…</div>';
+  const stage = $('#svg-stage');
+  if (!stage) throw new Error('Contenedor SVG no encontrado');
+  stage.innerHTML = '<div class="loading">Cargando mapa…</div>';
 
   // Intento progresivo con candidatos
   let res;
@@ -97,11 +105,21 @@ async function loadMap() {
   }
   if (!res.ok) throw new Error('No se pudo cargar el mapa SVG');
   const svgText = await res.text();
-  wrapper.innerHTML = svgText;
+  stage.innerHTML = svgText;
 
   // Normalizar: agregar clase .region a todas las capas clicables
-  const svg = $('svg', wrapper);
+  const svg = $('svg', stage);
   if (!svg) throw new Error('SVG inválido');
+
+  // Asegurar que el SVG se escale correctamente dentro de su contenedor
+  // 1) Forzar preserveAspectRatio para que se vea completo (letterbox si hace falta)
+  try { svg.setAttribute('preserveAspectRatio', 'xMidYMid meet'); } catch (_) {}
+  // 2) Si falta viewBox (p.ej. algunos SVGs lo traen mal escrito), infiérelo desde width/height
+  if (!svg.getAttribute('viewBox')) {
+    const w = parseFloat(svg.getAttribute('width')) || 1000;
+    const h = parseFloat(svg.getAttribute('height')) || 1000;
+    svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+  }
 
   // 1) Preferimos elementos con [data-name]
   let regions = $$('[data-name]', svg);
@@ -162,6 +180,13 @@ function nextTarget() {
     setTargetName('¡Completado!');
     // Deshabilitar todo
     $$('.region').forEach((r) => setDisabled(r, true));
+    // Si estamos en modo 1 minuto, mostrar resultados con el tiempo usado
+    if (state.mode === 'timed') {
+      clearTimer();
+      const now = Date.now();
+      const used = state.startAt ? Math.max(0, Math.min(state.durationMs, now - state.startAt)) : state.durationMs;
+      showResults(used);
+    }
     return null;
   }
   const name = state.order[state.index];
@@ -205,12 +230,16 @@ function attachHandlers(svg, regions) {
 async function startGame() {
   try {
     const { svg, regions } = await loadMap();
-    // Reiniciar estado
+    // Reiniciar estado de puntaje/orden
     state.correct = 0;
     state.wrong = 0;
     state.index = 0;
+    state.initialTotal = regions.length;
     state.order = buildOrder(regions);
     updateScore();
+    // Reset zoom
+    state.zoom = 1;
+    applyZoom();
 
     // Habilitar todas las regiones y limpiar estilos
     regions.forEach((r) => {
@@ -220,13 +249,157 @@ async function startGame() {
 
     attachHandlers(svg, regions);
     nextTarget();
+
+    // Timer segun modo
+    setupTimer();
   } catch (err) {
     console.error(err);
-    $('#map-wrapper').innerHTML = '<div class="error">No se pudo cargar el mapa.</div>';
+    const stage = $('#svg-stage');
+    if (stage) stage.innerHTML = '<div class="error">No se pudo cargar el mapa.</div>';
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  $('#btn-reset').addEventListener('click', () => startGame());
+/** Modo y temporizador **/
+function msToClock(ms) {
+  if (ms < 0) ms = 0;
+  const s = Math.ceil(ms / 1000);
+  const mm = String(Math.floor(s / 60)).padStart(2, '0');
+  const ss = String(s % 60).padStart(2, '0');
+  return `${mm}:${ss}`;
+}
+
+function setupTimer() {
+  clearTimer();
+  const timerEl = $('#timer');
+  if (state.mode === 'timed' && state.durationMs > 0) {
+    state.startAt = Date.now();
+    state.endAt = state.startAt + state.durationMs;
+    timerEl.textContent = msToClock(state.durationMs);
+    state.timerId = setInterval(() => {
+      const remaining = state.endAt - Date.now();
+      timerEl.textContent = msToClock(remaining);
+      if (remaining <= 0) {
+        clearTimer();
+        onTimeUp();
+      }
+    }, 200);
+  } else {
+    timerEl.textContent = '—';
+  }
+}
+
+function clearTimer() {
+  if (state.timerId) {
+    clearInterval(state.timerId);
+    state.timerId = null;
+  }
+}
+
+/** Zoom **/
+function applyZoom() {
+  const svgEl = $('#svg-stage svg');
+  if (!svgEl) return;
+  const z = Math.max(1, Math.min(3, state.zoom));
+  svgEl.style.transform = `scale(${z})`;
+}
+
+function onTimeUp() {
+  // Deshabilitar interacción
+  $$('.region').forEach((r) => setDisabled(r, true));
+  setTargetName('—');
+  // Mostrar resultados con tiempo total usado = duración completa
+  showResults(state.durationMs);
+}
+
+function showResults(usedMs) {
+  const solved = Math.min(state.index, state.initialTotal);
+  const pct = state.initialTotal ? Math.round((solved / state.initialTotal) * 100) : 0;
+  $('#res-correct').textContent = String(state.correct);
+  $('#res-wrong').textContent = String(state.wrong);
+  $('#res-progress').textContent = `${solved}/${state.initialTotal}`;
+  $('#res-progresspct').textContent = `${pct}%`;
+  $('#res-time').textContent = msToClock(usedMs);
+  const bar = $('#res-progressbar');
+  if (bar) bar.style.width = `${pct}%`;
+  const trophy = $('#res-trophy');
+  if (trophy) {
+    const finishedAll = solved >= state.initialTotal && state.initialTotal > 0;
+    trophy.textContent = (finishedAll && usedMs < state.durationMs) ? '🏆' : '';
+  }
+  showOverlay('#overlay-results');
+}
+
+function enterTimed() {
+  state.mode = 'timed';
+  state.durationMs = 60_000;
+  const b = $('#btn-timed');
+  if (b) b.classList.add('active');
   startGame();
+}
+
+function exitTimedEarlyAndShowResults() {
+  clearTimer();
+  const now = Date.now();
+  const used = state.startAt ? Math.max(0, Math.min(state.durationMs, now - state.startAt)) : 0;
+  showResults(used);
+}
+
+/** Overlays y UI **/
+function showOverlay(sel) {
+  $(sel).classList.remove('hidden');
+}
+function hideOverlay(sel) {
+  $(sel).classList.add('hidden');
+}
+
+/** Botón Pasar **/
+function skipCurrent() {
+  const targetName = state.order[state.index];
+  if (!targetName) return;
+  state.wrong += 1;
+  updateScore();
+  // Re-encolar al final y avanzar
+  state.order.push(targetName);
+  state.index += 1;
+  nextTarget();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Inicia en modo libre por defecto
+  state.mode = 'free';
+  state.durationMs = 0;
+  startGame();
+
+  // Controles básicos
+  $('#btn-reset').addEventListener('click', () => {
+    clearTimer();
+    startGame();
+  });
+  $('#btn-skip-map').addEventListener('click', () => skipCurrent());
+  // Zoom controls
+  $('#zoom-in').addEventListener('click', () => { state.zoom = Math.min(3, (state.zoom + 0.25)); applyZoom(); });
+  $('#zoom-out').addEventListener('click', () => { state.zoom = Math.max(1, (state.zoom - 0.25)); applyZoom(); });
+  // Botón Modo 1 minuto (toggle)
+  $('#btn-timed').addEventListener('click', () => {
+    if (state.mode !== 'timed') {
+      enterTimed();
+    } else {
+      exitTimedEarlyAndShowResults();
+    }
+  });
+
+  // Overlays: resultados
+  $('#again-same').addEventListener('click', () => {
+    hideOverlay('#overlay-results');
+    enterTimed();
+  });
+  // Cerrar resultados (X) vuelve a modo libre
+  $('#results-close').addEventListener('click', () => {
+    hideOverlay('#overlay-results');
+    state.mode = 'free';
+    state.durationMs = 0;
+    const b = $('#btn-timed');
+    if (b) b.classList.remove('active');
+    startGame();
+  });
 });

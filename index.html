@@ -9,24 +9,41 @@
   <body>
     <header class="app-header">
       <h1>¿Qué departamento es?</h1>
-      <div class="status">
-        <div class="prompt">
-          Toca el departamento: <span id="target-name">—</span>
-        </div>
-        <div class="score">
-          Aciertos: <span id="score-correct">0</span>
-          · Errores: <span id="score-wrong">0</span>
-        </div>
-      </div>
-      <div class="controls">
-        <button id="btn-reset" type="button">Reiniciar</button>
-      </div>
     </header>
 
     <main class="app-main">
-      <!-- Contenedor del mapa -->
-      <div id="map-wrapper" class="map-wrapper" aria-live="polite">
-        <!-- El SVG se inyecta aquí -->
+      <div class="layout">
+        <aside class="sidepanel">
+          <div class="panel-section">
+            <div class="score">
+              Aciertos: <span id="score-correct">0</span>
+              · Errores: <span id="score-wrong">0</span>
+            </div>
+            <div class="timer" id="timer" aria-live="polite">—</div>
+          </div>
+          <div class="panel-section">
+            <button id="btn-timed" class="btn btn-lg btn-accent btn-block" type="button" title="Inicia/termina el modo de 1 minuto">Modo 1 minuto</button>
+            <button id="btn-reset" class="btn btn-block" type="button">Reiniciar</button>
+          </div>
+        </aside>
+        <section class="map-area">
+          <div id="map-wrapper" class="map-wrapper" aria-live="polite">
+            <div class="prompt-top" role="status" aria-live="polite">
+              <div class="prompt-label">Toca el departamento</div>
+              <div class="prompt-row">
+                <div class="target-chip" id="target-name">—</div>
+                <button id="btn-skip-map" class="btn btn-outline btn-sm" type="button" title="Pasar (cuenta como error)">Pasar</button>
+              </div>
+            </div>
+            <div class="svg-viewport">
+              <div id="svg-stage" class="svg-stage"><!-- El SVG se inyecta aquí --></div>
+              <div class="zoom-controls">
+                <button id="zoom-in" class="btn btn-sm" type="button" aria-label="Acercar">+</button>
+                <button id="zoom-out" class="btn btn-sm" type="button" aria-label="Alejar">−</button>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </main>
 
@@ -37,7 +54,32 @@
       </p>
     </footer>
 
+    <div id="overlay-results" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="results-title">
+      <div class="overlay-card results-card">
+        <button id="results-close" class="results-close" type="button" aria-label="Cerrar">×</button>
+        <h2 id="results-title">Resultados — 1 minuto <span id="res-trophy" aria-hidden="true"></span></h2>
+        <div class="results-hero">
+          <div class="hero-stat">
+            <div class="big" id="res-correct">0</div>
+            <div class="small">Aciertos</div>
+          </div>
+          <div class="hero-stat">
+            <div class="big" id="res-wrong">0</div>
+            <div class="small">Errores</div>
+          </div>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-bar" id="res-progressbar" style="width: 0%"></div>
+        </div>
+        <div class="progress-text">
+          Avance: <span id="res-progress">0/0</span> (<span id="res-progresspct">0%</span>) · Tiempo usado: <span id="res-time">00:00</span>
+        </div>
+        <div class="overlay-actions">
+          <button id="again-same" class="primary" type="button">Jugar de nuevo</button>
+        </div>
+      </div>
+    </div>
+
     <script src="app.js"></script>
   </body>
   </html>
-
