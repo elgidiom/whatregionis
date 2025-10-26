@@ -433,12 +433,84 @@ function setupPanning() {
   let pointerActive = false; // verdadero solo si hicimos pointerdown válido
   const DRAG_THRESHOLD = 12; // píxeles, para evitar micro-movimientos
 
+  // Soporte de pinza (pinch) para zoom dentro del mapa
+  const activePointers = new Map(); // pointerId -> {x, y}
+  let pinching = false;
+  let pinchStartDist = 0;
+  let pinchStartZoom = 1;
+  let pinchStartPanX = 0;
+  let pinchStartPanY = 0;
+  let pinchPivotX = 0;
+  let pinchPivotY = 0;
+
+  const svgEl = () => document.querySelector('#svg-stage svg');
+  const clampZoom = (z) => Math.max(1, Math.min(3, z));
+  const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  const mid = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
+  const getTwoPointers = () => {
+    const it = Array.from(activePointers.values());
+    return it.length >= 2 ? [it[0], it[1]] : null;
+  };
+
+  const beginPinchIfNeeded = () => {
+    const pts = getTwoPointers();
+    if (!pts || pinching) return;
+    pinching = true;
+    pinchStartDist = dist(pts[0], pts[1]);
+    pinchStartZoom = state.zoom;
+    pinchStartPanX = state.panX;
+    pinchStartPanY = state.panY;
+    const center = mid(pts[0], pts[1]);
+    pinchPivotX = center.x;
+    pinchPivotY = center.y;
+    suppressClick = true;
+    viewport.classList.add('is-dragging');
+  };
+
+  const updatePinch = () => {
+    if (!pinching) return;
+    const pts = getTwoPointers();
+    if (!pts) return;
+    const currentDist = dist(pts[0], pts[1]);
+    if (pinchStartDist <= 0) return;
+    const factor = currentDist / pinchStartDist;
+    const newZoom = clampZoom(pinchStartZoom * factor);
+
+    // Mantener el punto de pinza (pivot) estable en pantalla
+    const svg = svgEl();
+    if (svg) {
+      const rect = svg.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      // Vector desde el centro visual del SVG hasta el pivot, en coords sin escalar
+      const vx = (pinchPivotX - centerX) / (pinchStartZoom || 1);
+      const vy = (pinchPivotY - centerY) / (pinchStartZoom || 1);
+      const dz = newZoom - pinchStartZoom;
+      const dx = -(dz) * vx;
+      const dy = -(dz) * vy;
+      state.panX = pinchStartPanX + dx;
+      state.panY = pinchStartPanY + dy;
+    }
+    state.zoom = newZoom;
+    applyZoom();
+  };
+
   const onPointerDown = (e) => {
     // Evitar interferir con controles interactivos (botones, etc.)
     const target = e.target;
     if (target.closest && (target.closest('.zoom-controls') || target.closest('button'))) return;
     // Solo botón principal o toque
     if (e.button !== undefined && e.button !== 0) return;
+    activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    try { viewport.setPointerCapture(e.pointerId); } catch (_) {}
+    // Si pasamos a 2 punteros, comenzamos pinza
+    if (activePointers.size >= 2) {
+      // cancelar cualquier arrastre de un dedo
+      dragging = false;
+      pointerActive = false;
+      beginPinchIfNeeded();
+      return;
+    }
     dragging = false; // se activará al pasar el umbral
     pointerActive = true;
     suppressClick = false;
@@ -448,6 +520,13 @@ function setupPanning() {
     originY = state.panY;
   };
   const onPointerMove = (e) => {
+    if (activePointers.has(e.pointerId)) {
+      activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    }
+    if (pinching) {
+      updatePinch();
+      return;
+    }
     if (!pointerActive) return; // ignorar movimientos si no hubo pointerdown válido
     const dx = e.clientX - startX;
     const dy = e.clientY - startY;
@@ -464,7 +543,13 @@ function setupPanning() {
     state.panY = originY + dy;
     applyZoom();
   };
-  const onPointerUp = () => {
+  const onPointerUp = (e) => {
+    if (activePointers.has(e.pointerId)) activePointers.delete(e.pointerId);
+    try { viewport.releasePointerCapture(e.pointerId); } catch (_) {}
+    if (pinching && activePointers.size < 2) {
+      pinching = false;
+      viewport.classList.remove('is-dragging');
+    }
     if (dragging) {
       dragging = false;
       viewport.classList.remove('is-dragging');
