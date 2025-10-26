@@ -324,7 +324,8 @@ function onTimeUp() {
 }
 
 function showResults(usedMs) {
-  const solved = Math.min(state.index, state.initialTotal);
+  // Avance debe contar solo aciertos
+  const solved = Math.min(state.correct, state.initialTotal);
   const pct = state.initialTotal ? Math.round((solved / state.initialTotal) * 100) : 0;
   $('#res-correct').textContent = String(state.correct);
   $('#res-wrong').textContent = String(state.wrong);

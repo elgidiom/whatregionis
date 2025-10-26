@@ -112,7 +112,22 @@ body {
 .overlay-card h2 { margin: 0 0 8px 0; font-size: 20px; }
 .overlay-desc { color: var(--muted); margin: 0 0 12px 0; }
 .overlay-actions { display: flex; gap: 10px; justify-content: center; margin-top: 12px; }
-.overlay-actions .primary { border-color: var(--accent); color: #fff; }
+/* Botón principal de resultados alineado al estilo general */
+.overlay-actions .primary {
+  background: #1f2937;
+  color: var(--text);
+  border: 1px solid #334155;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(56,189,248,0.15);
+}
+.overlay-actions .primary:hover {
+  border-color: var(--accent);
+  color: #fff;
+}
 
 /* Resultados bonitos/compartibles */
 .results-card { width: min(560px, 92vw); padding: 20px; }
