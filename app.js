@@ -36,6 +36,8 @@ const state = {
   timerId: null,
   startAt: 0,
   zoom: 1,
+  panX: 0,
+  panY: 0,
 };
 
 function setTargetName(name) {
@@ -70,6 +72,7 @@ function norm(s) {
 }
 
 const VALID_SET = new Set(VALID_DEPARTMENTS.map(norm));
+const EXCLUDED_ASK = new Set([ norm('San Andrés y Providencia') ]);
 
 function getTitleFor(el) {
   // Busca un <title> en el elemento o sus ancestros cercanos
@@ -170,7 +173,8 @@ async function loadMap() {
 /** Lógica principal del juego **/
 function buildOrder(regions) {
   // A partir de los nombres en data-name
-  const names = regions.map((r) => r.getAttribute('data-name'));
+  const names = regions.map((r) => r.getAttribute('data-name'))
+    .filter((n) => !EXCLUDED_ASK.has(norm(n)));
   return shuffle(names);
 }
 
@@ -234,17 +238,25 @@ async function startGame() {
     state.correct = 0;
     state.wrong = 0;
     state.index = 0;
-    state.initialTotal = regions.length;
     state.order = buildOrder(regions);
+    state.initialTotal = state.order.length;
     updateScore();
     // Reset zoom
     state.zoom = 1;
+    state.panX = 0;
+    state.panY = 0;
     applyZoom();
 
     // Habilitar todas las regiones y limpiar estilos
     regions.forEach((r) => {
       r.classList.remove('correct', 'wrong', 'disabled');
       setDisabled(r, false);
+    });
+
+    // Deshabilitar regiones excluidas para que no generen clics erróneos
+    regions.forEach((r) => {
+      const n = r.getAttribute('data-name');
+      if (n && EXCLUDED_ASK.has(norm(n))) setDisabled(r, true);
     });
 
     attachHandlers(svg, regions);
@@ -300,7 +312,7 @@ function applyZoom() {
   const svgEl = $('#svg-stage svg');
   if (!svgEl) return;
   const z = Math.max(1, Math.min(3, state.zoom));
-  svgEl.style.transform = `scale(${z})`;
+  svgEl.style.transform = `translate(${state.panX}px, ${state.panY}px) scale(${z})`;
 }
 
 function onTimeUp() {
@@ -402,4 +414,80 @@ document.addEventListener('DOMContentLoaded', () => {
     if (b) b.classList.remove('active');
     startGame();
   });
+
+  // Panning con arrastre dentro del área del mapa
+  setupPanning();
 });
+
+/** Panning (arrastrar para mover el mapa) **/
+function setupPanning() {
+  const viewport = document.querySelector('.svg-viewport');
+  if (!viewport) return;
+  let dragging = false;
+  let startX = 0;
+  let startY = 0;
+  let originX = 0;
+  let originY = 0;
+  let suppressClick = false;
+  let pointerActive = false; // verdadero solo si hicimos pointerdown válido
+  const DRAG_THRESHOLD = 12; // píxeles, para evitar micro-movimientos
+
+  const onPointerDown = (e) => {
+    // Evitar interferir con controles interactivos (botones, etc.)
+    const target = e.target;
+    if (target.closest && (target.closest('.zoom-controls') || target.closest('button'))) return;
+    // Solo botón principal o toque
+    if (e.button !== undefined && e.button !== 0) return;
+    dragging = false; // se activará al pasar el umbral
+    pointerActive = true;
+    suppressClick = false;
+    startX = e.clientX;
+    startY = e.clientY;
+    originX = state.panX;
+    originY = state.panY;
+  };
+  const onPointerMove = (e) => {
+    if (!pointerActive) return; // ignorar movimientos si no hubo pointerdown válido
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    if (!dragging) {
+      if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) {
+        dragging = true;
+        suppressClick = true;
+        viewport.classList.add('is-dragging');
+      } else {
+        return;
+      }
+    }
+    state.panX = originX + dx;
+    state.panY = originY + dy;
+    applyZoom();
+  };
+  const onPointerUp = () => {
+    if (dragging) {
+      dragging = false;
+      viewport.classList.remove('is-dragging');
+    }
+    // limpiar el flag de supresión al terminar el gesto
+    suppressClick = false;
+    pointerActive = false;
+  };
+  const onClickCapture = (e) => {
+    if (suppressClick) {
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      suppressClick = false;
+    }
+  };
+
+  // Registrar una sola vez
+  if (!viewport._panReady) {
+    viewport.addEventListener('click', onClickCapture, true); // captura
+    viewport.addEventListener('pointerdown', onPointerDown);
+    viewport.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerUp);
+    viewport.addEventListener('pointerleave', onPointerUp);
+    viewport._panReady = true;
+  }
+}
