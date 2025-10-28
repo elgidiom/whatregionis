@@ -502,7 +502,11 @@ function setupPanning() {
     // Solo botón principal o toque
     if (e.button !== undefined && e.button !== 0) return;
     activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    try { viewport.setPointerCapture(e.pointerId); } catch (_) {}
+    // En desktop (mouse) no capturamos el puntero para no romper los clicks
+    // sobre las regiones del SVG. Mantener captura solo para touch/pen.
+    if (e.pointerType && e.pointerType !== 'mouse') {
+      try { viewport.setPointerCapture(e.pointerId); } catch (_) {}
+    }
     // Si pasamos a 2 punteros, comenzamos pinza
     if (activePointers.size >= 2) {
       // cancelar cualquier arrastre de un dedo
