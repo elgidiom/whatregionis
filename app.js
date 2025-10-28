@@ -594,4 +594,38 @@ function setupPanning() {
     viewport.addEventListener('pointerleave', onPointerUp);
     viewport._panReady = true;
   }
+
+  // Zoom con scroll en desktop: acerca/aleja manteniendo el cursor como pivote
+  const onWheel = (e) => {
+    // Evitar hacer zoom si hay modificadores extraños, pero permitir ctrl+wheel también
+    // Solo prevenir comportamiento por defecto dentro del mapa
+    e.preventDefault();
+    const svg = svgEl();
+    if (!svg) return;
+    // Factor de zoom por paso de rueda (suave)
+    const base = 1.12;
+    const direction = e.deltaY < 0 ? 1 : -1; // rueda arriba: acercar
+    const targetZoom = clampZoom(state.zoom * (direction > 0 ? base : (1 / base)));
+    if (targetZoom === state.zoom) return;
+
+    // Mantener el punto bajo el cursor estable en pantalla
+    const rect = svg.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const vx = (e.clientX - centerX) / (state.zoom || 1);
+    const vy = (e.clientY - centerY) / (state.zoom || 1);
+    const dz = targetZoom - state.zoom;
+    const dx = -(dz) * vx;
+    const dy = -(dz) * vy;
+    state.panX += dx;
+    state.panY += dy;
+    state.zoom = targetZoom;
+    applyZoom();
+  };
+
+  // Registrar listener de wheel (solo una vez)
+  if (!viewport._wheelReady) {
+    viewport.addEventListener('wheel', onWheel, { passive: false });
+    viewport._wheelReady = true;
+  }
 }
