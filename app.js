@@ -38,6 +38,7 @@ const state = {
   zoom: 1,
   panX: 0,
   panY: 0,
+  finished: false,
 };
 
 function setTargetName(name) {
@@ -181,6 +182,7 @@ function buildOrder(regions) {
 function nextTarget() {
   if (state.index >= state.order.length) {
     // Juego terminado
+    state.finished = true;
     setTargetName('¡Completado!');
     // Deshabilitar todo
     $$('.region').forEach((r) => setDisabled(r, true));
@@ -240,6 +242,7 @@ async function startGame() {
     state.index = 0;
     state.order = buildOrder(regions);
     state.initialTotal = state.order.length;
+    state.finished = false;
     updateScore();
     // Reset zoom
     state.zoom = 1;
@@ -292,7 +295,7 @@ function setupTimer() {
       timerEl.textContent = msToClock(remaining);
       if (remaining <= 0) {
         clearTimer();
-        onTimeUp();
+        if (!state.finished) onTimeUp();
       }
     }, 200);
   } else {
@@ -316,6 +319,7 @@ function applyZoom() {
 }
 
 function onTimeUp() {
+  if (state.finished) return; // evitar sobrescribir resultados si ya se completó
   // Deshabilitar interacción
   $$('.region').forEach((r) => setDisabled(r, true));
   setTargetName('—');
@@ -331,7 +335,8 @@ function showResults(usedMs) {
   $('#res-wrong').textContent = String(state.wrong);
   $('#res-progress').textContent = `${solved}/${state.initialTotal}`;
   $('#res-progresspct').textContent = `${pct}%`;
-  $('#res-time').textContent = msToClock(usedMs);
+  // Para tiempo usado, mostramos hacia abajo (floor) para no redondear a 01:00 si fue < 60s
+  $('#res-time').textContent = msToClockFloor(usedMs);
   const bar = $('#res-progressbar');
   if (bar) bar.style.width = `${pct}%`;
   const trophy = $('#res-trophy');
@@ -340,6 +345,15 @@ function showResults(usedMs) {
     trophy.textContent = (finishedAll && usedMs < state.durationMs) ? '🏆' : '';
   }
   showOverlay('#overlay-results');
+}
+
+// Representación de reloj con redondeo hacia abajo (para tiempos usados)
+function msToClockFloor(ms) {
+  if (ms < 0) ms = 0;
+  const s = Math.floor(ms / 1000);
+  const mm = String(Math.floor(s / 60)).padStart(2, '0');
+  const ss = String(s % 60).padStart(2, '0');
+  return `${mm}:${ss}`;
 }
 
 function enterTimed() {
